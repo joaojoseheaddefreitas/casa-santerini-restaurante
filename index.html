@@ -26448,3 +26448,54 @@ html body #ab-clean-home .abch-tab img{image-rendering:auto}
   window.addEventListener('load',function(){aplica();limpa();});
 })();
 </script>
+<style id="cc-banner-carrossel-css">
+/* Carrossel de fundo do Banner Principal (capa). Fica entre o fundo e o degradê/logo; não toca nos botões, logo nem textos. */
+#ab-clean-home .abch-hero #cc-banner-carrossel{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+#ab-clean-home .abch-hero #cc-banner-carrossel .cc-bc-slide{position:absolute;inset:0;background-size:cover!important;background-repeat:no-repeat!important;background-color:#0f2340;opacity:0;transition:opacity 1.2s ease}
+#ab-clean-home .abch-hero #cc-banner-carrossel .cc-bc-slide.on{opacity:1}
+</style>
+<script id="cc-banner-carrossel-js">
+(function(){
+  /* Lista do carrossel: SOMENTE estas 4 fotos panorâmicas (1400px, q85). */
+  var SLIDES=[
+    {src:"images/banner-1-farol.jpg",pos:"center 20%"},         /* 1 – Praia do Farol de Itapuã */
+    {src:"images/banner-2-piscina-deck.jpg",pos:"center center"},/* 2 – piscina e deck de frente para o mar */
+    {src:"images/banner-3-salao.jpg",pos:"center center"},       /* 3 – salão elegante com vista */
+    {src:"images/banner-4-frutos-do-mar.jpg",pos:"center center"}/* 4 – prato de frutos do mar em plano aberto */
+  ];
+  var INTERVALO=5500, idx=0, timer=null;
+  SLIDES.forEach(function(s){ var i=new Image(); i.src=s.src; });
+  function aplicarAtivo(layer){
+    var els=layer.children;
+    for(var i=0;i<els.length;i++) els[i].classList.toggle("on",i===idx);
+  }
+  function montar(hero){
+    if(hero.querySelector("#cc-banner-carrossel")) return;
+    var layer=document.createElement("div");
+    layer.id="cc-banner-carrossel";
+    SLIDES.forEach(function(s){
+      var d=document.createElement("div");
+      d.className="cc-bc-slide";
+      d.style.backgroundImage='url("'+s.src+'")';
+      d.style.backgroundPosition=s.pos;
+      layer.appendChild(d);
+    });
+    var bg=hero.querySelector(".abch-hero-bg");
+    if(bg && bg.nextSibling) hero.insertBefore(layer,bg.nextSibling); else hero.appendChild(layer);
+    aplicarAtivo(layer);
+  }
+  function sync(){
+    document.querySelectorAll("#ab-clean-home .abch-hero").forEach(montar);
+  }
+  function avancar(){
+    idx=(idx+1)%SLIDES.length;
+    var l=document.getElementById("cc-banner-carrossel");
+    if(l) aplicarAtivo(l);
+  }
+  try{ new MutationObserver(sync).observe(document.body,{childList:true,subtree:true}); }catch(e){}
+  [200,800,2000].forEach(function(t){ setTimeout(sync,t); });
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",sync); else sync();
+  window.addEventListener("load",sync);
+  if(!timer) timer=setInterval(avancar,INTERVALO);
+})();
+</script>
