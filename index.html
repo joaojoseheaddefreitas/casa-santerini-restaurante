@@ -26414,66 +26414,52 @@ html body #ab-clean-home .abch-tab img{image-rendering:auto}
 <script id="cc-acabamento-capa-v8-js">
 (function(){
   'use strict';
-  /* Fotos em alta definição (w=600&q=85) por setor. Só entram depois de carregar;
-     se alguma falhar, a miniatura atual continua no lugar (nada quebra). */
-  var ID={
-    cardapio:'1414235077428-338989a2e8c0',
-    atendente:'1517248135467-4c7edcad34c4',
-    cozinha:'1556910103-1c02745aae4d',
-    delivery:'1526367790999-0150786686a2',
-    estoque2:'1586528116311-ad8dd3c8310d',
-    caixa:'1556742049-0cfed4f6a45d',
-    relatorio:'1551288049-bebda4e38f71',
-    admin:'1460925895917-afdab827c52f',
-    cliente:'1529156069898-49953e39b3ac'
-  };
-  var ok={},tent={};
-  function url(k){return 'https://images.unsplash.com/photo-'+ID[k]+'?auto=format&fit=crop&w=600&q=85';}
-  function aplica(){
-    document.querySelectorAll('#ab-clean-home .abch-tab img[data-real]').forEach(function(img){
-      var k=img.getAttribute('data-real'); if(!ID[k]) return;
-      var u=url(k);
-      if(ok[k]){ if(img.getAttribute('src')!==u) img.setAttribute('src',u); return; }
-      if(tent[k]) return; tent[k]=1;
-      var t=new Image(); t.onload=function(){ok[k]=1;aplica();}; t.onerror=function(){}; t.src=u;
-    });
-  }
-  /* uma única caixa de textos: remove duplicatas, se houver */
+  /* Imagens originais das 10 abas restauradas: nenhuma foto externa (Unsplash) é aplicada. */
   function limpa(){
     document.querySelectorAll('#ab-clean-home .abch-hero').forEach(function(h){
       var l=h.querySelectorAll('.cc-hero-info'); for(var i=1;i<l.length;i++) l[i].remove();
     });
   }
-  setInterval(function(){aplica();limpa();},1200);
-  window.addEventListener('load',function(){aplica();limpa();});
+  setInterval(limpa,1200);
+  window.addEventListener('load',limpa);
 })();
 </script>
 <style id="cc-banner-carrossel-css">
 /* Carrossel de fundo do Banner Principal (capa). Fica entre o fundo e o degradê/logo; não toca nos botões, logo nem textos. */
 #ab-clean-home .abch-hero #cc-banner-carrossel{position:absolute;inset:0;overflow:hidden;pointer-events:none}
-#ab-clean-home .abch-hero #cc-banner-carrossel .cc-bc-slide{position:absolute;inset:0;background-size:cover!important;background-repeat:no-repeat!important;background-color:#0f2340;opacity:0;transition:opacity 1.2s ease}
+#ab-clean-home .abch-hero #cc-banner-carrossel .cc-bc-slide{position:absolute;inset:0;background-size:cover!important;background-repeat:no-repeat!important;background-color:transparent;opacity:0;transition:opacity 1.2s ease}
 #ab-clean-home .abch-hero #cc-banner-carrossel .cc-bc-slide.on{opacity:1}
+html body #ab-clean-home .abch-hero-bg::after{display:none!important}
+html body #ab-clean-home .abch-hero #cc-banner-carrossel{z-index:2}
 </style>
 <script id="cc-banner-carrossel-js">
 (function(){
-  /* Lista do carrossel: SOMENTE estas 4 fotos panorâmicas (1400px, q85). */
-  var SLIDES=[
-    {src:"images/banner-1-farol.jpg",pos:"center 20%"},         /* 1 – Praia do Farol de Itapuã */
-    {src:"images/banner-2-piscina-deck.jpg",pos:"center center"},/* 2 – piscina e deck de frente para o mar */
-    {src:"images/banner-3-salao.jpg",pos:"center center"},       /* 3 – salão elegante com vista */
-    {src:"images/banner-4-frutos-do-mar.jpg",pos:"center center"}/* 4 – prato de frutos do mar em plano aberto */
+  /* Carrossel do banner principal: SOMENTE fotos embutidas (Base64) neste arquivo.
+     Ignora config.designBanner / Supabase / arquivos externos. */
+  var FOTOS=[
+    /* {src:"data:image/jpeg;base64,...", pos:"center 20%"}  <- Farol, Prato do mar, Salão, Chef */
   ];
+  function slides(){
+    if(FOTOS.length) return FOTOS;
+    var emb=(window.CC_IMG_REAIS||{}).banner||window.__CC_BANNER_EMBUTIDO||"";
+    return emb?[{src:emb,pos:"center 20%"}]:[];
+  }
   var INTERVALO=5500, idx=0, timer=null;
-  SLIDES.forEach(function(s){ var i=new Image(); i.src=s.src; });
   function aplicarAtivo(layer){
     var els=layer.children;
     for(var i=0;i<els.length;i++) els[i].classList.toggle("on",i===idx);
   }
+  function bloquearNuvem(hero){
+    var bg=hero.querySelector(".abch-hero-bg");
+    if(bg){ bg.style.setProperty("background-image","none","important"); }
+  }
   function montar(hero){
+    bloquearNuvem(hero);
     if(hero.querySelector("#cc-banner-carrossel")) return;
+    var S=slides(); if(!S.length) return;
     var layer=document.createElement("div");
     layer.id="cc-banner-carrossel";
-    SLIDES.forEach(function(s){
+    S.forEach(function(s){
       var d=document.createElement("div");
       d.className="cc-bc-slide";
       d.style.backgroundImage='url("'+s.src+'")';
@@ -26488,9 +26474,10 @@ html body #ab-clean-home .abch-tab img{image-rendering:auto}
     document.querySelectorAll("#ab-clean-home .abch-hero").forEach(montar);
   }
   function avancar(){
-    idx=(idx+1)%SLIDES.length;
     var l=document.getElementById("cc-banner-carrossel");
-    if(l) aplicarAtivo(l);
+    if(!l||l.children.length<2) return;
+    idx=(idx+1)%l.children.length;
+    aplicarAtivo(l);
   }
   try{ new MutationObserver(sync).observe(document.body,{childList:true,subtree:true}); }catch(e){}
   [200,800,2000].forEach(function(t){ setTimeout(sync,t); });
