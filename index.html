@@ -26324,6 +26324,9 @@ html body #ab-clean-home .abch-hero .cc-hero-info{position:absolute;z-index:5;le
       '<b style="flex:1 1 200px;font-size:.95rem">🖨️ Placas das mesas <span id="cpp-n" style="color:#d9b34a"></span></b>' +
       '<label style="font-size:.75rem;display:flex;gap:6px;align-items:center">Por folha ' +
       '<select id="cpp-lay" style="border-radius:8px;padding:6px;color:#111"><option value="1">1 (A4)</option><option value="2">2 (A4 paisagem)</option><option value="4">4 (A4)</option></select></label>' +
+      '<label style="font-size:.75rem;display:flex;gap:6px;align-items:center">Tamanho <b id="cpp-szv"></b>%<input id="cpp-sz" type="range" min="40" max="100" step="1" style="width:110px"></label>' +
+      '<label style="font-size:.75rem;display:flex;gap:6px;align-items:center">Cópias <select id="cpp-cp" style="border-radius:8px;padding:6px;color:#111"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="6">6</option><option value="8">8</option></select></label>' +
+      '<button id="cpp-cls" style="' + bt + ';background:#0ea5e9;color:#fff">⚙️ Cores / banner / título / QR</button>' +
       '<span id="cpp-st" style="flex:1 1 220px;font-size:.75rem;font-weight:700"></span>' +
       '<button id="cpp-imp" disabled style="' + bt + ';background:#d9b34a;color:#1a1200;opacity:.5">🖨️ Imprimir</button>' +
       '<button id="cpp-x" style="' + bt + ';background:#334155;color:#fff">✕ Fechar</button></div>' +
@@ -26331,20 +26334,34 @@ html body #ab-clean-home .abch-hero .cc-hero-info{position:absolute;z-index:5;le
     document.body.appendChild(ov);
     var $ = function (id) { return ov.querySelector('#' + id); };
     $('cpp-n').textContent = '(' + mesas.length + ')';
+    var KEYP = 'cc_placa_cfg_v1', cfgP = { sz: 100, cp: 1, lay: 1 };
+    try { Object.assign(cfgP, JSON.parse(localStorage.getItem(KEYP) || '{}')); } catch (e) {}
+    var salvaP = function () { try { localStorage.setItem(KEYP, JSON.stringify(cfgP)); } catch (e) {} };
+    $('cpp-sz').value = cfgP.sz; $('cpp-szv').textContent = cfgP.sz;
+    $('cpp-cp').value = String(cfgP.cp); $('cpp-lay').value = String(cfgP.lay || 1);
+    $('cpp-sz').oninput = function () { cfgP.sz = parseInt(this.value, 10) || 100; $('cpp-szv').textContent = cfgP.sz; salvaP(); };
+    $('cpp-cp').onchange = function () { cfgP.cp = parseInt(this.value, 10) || 1; salvaP(); };
+    $('cpp-lay').onchange = function () { cfgP.lay = parseInt(this.value, 10) || 1; salvaP(); };
+    $('cpp-cls').onclick = function () {
+      if (typeof _origPrint !== 'function') { window.toast && window.toast('Painel clássico indisponível'); return; }
+      abort = true; ov.remove(); _origPrint(mesas, links);
+    };
     var st = function (t, er) { var e = $('cpp-st'); e.textContent = t; e.style.color = er ? '#fca5a5' : '#bbf7d0'; };
     $('cpp-x').onclick = function () { abort = true; ov.remove(); };
 
     function docHTML(lay) {
+      var kk = (cfgP.sz || 100) / 100, cop = cfgP.cp || 1, arr = [];
+      imgs.forEach(function (u) { for (var c = 0; c < cop; c++) arr.push(u); });
       var land = lay === 2, cols = lay === 1 ? 1 : 2, rows = lay === 4 ? 2 : 1, per = lay;
       var cw = lay === 1 ? '210mm' : (lay === 2 ? '148.5mm' : '105mm'), ch = lay === 1 ? '297mm' : (lay === 2 ? '210mm' : '148.5mm');
       var pw = land ? '297mm' : '210mm', ph = land ? '210mm' : '297mm', pages = '';
-      for (var i = 0; i < imgs.length; i += per) {
-        pages += '<div class="pg">' + imgs.slice(i, i + per).map(function (u) { return '<img src="' + u + '">'; }).join('') + '</div>';
+      for (var i = 0; i < arr.length; i += per) {
+        pages += '<div class="pg">' + arr.slice(i, i + per).map(function (u) { return '<img src="' + u + '">'; }).join('') + '</div>';
       }
       return '<!doctype html><html><head><meta charset="utf-8"><title>Placas das mesas</title><style>' +
         '@page{size:A4 ' + (land ? 'landscape' : 'portrait') + ';margin:0}*{margin:0;padding:0;box-sizing:border-box}html,body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
-        '.pg{width:' + pw + ';height:' + ph + ';display:grid;grid-template-columns:repeat(' + cols + ',' + cw + ');grid-template-rows:repeat(' + rows + ',' + ch + ');page-break-after:always;break-after:page;overflow:hidden}' +
-        '.pg:last-child{page-break-after:auto;break-after:auto}img{width:' + cw + ';height:' + ch + ';display:block}</style></head><body>' + pages + '</body></html>';
+        '.pg{width:' + pw + ';height:' + ph + ';display:grid;grid-template-columns:repeat(' + cols + ',' + cw + ');grid-template-rows:repeat(' + rows + ',' + ch + ');page-break-after:always;break-after:page;overflow:hidden;place-items:center}' +
+        '.pg:last-child{page-break-after:auto;break-after:auto}img{width:calc(' + cw + ' * ' + kk + ');height:calc(' + ch + ' * ' + kk + ');display:block}</style></head><body>' + pages + '</body></html>';
     }
     $('cpp-imp').onclick = function () {
       if (!pronto) return;
